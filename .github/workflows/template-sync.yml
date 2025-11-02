@@ -3,7 +3,7 @@ name: Template Sync
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 7 * * 1' # Mondays 07:17 UTC
+    - cron: "17 7 * * 1" # Mondays 07:17 UTC
 
 permissions:
   contents: write
@@ -35,13 +35,30 @@ jobs:
       - name: Detect sync branch
         id: detect
         run: |
-          set -e
+          set -euo pipefail
           git fetch origin '+refs/heads/chore/template-sync*:refs/remotes/origin/chore/template-sync*' || true
           BRANCH=$(git for-each-ref refs/remotes/origin/chore/template-sync* --sort=-committerdate --format='%(refname:short)' | head -n1 | sed 's#^origin/##' || true)
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          echo "Detected branch: $BRANCH"
+          if [ -z "$BRANCH" ]; then
+            echo "Detected branch: (none)"
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git rev-parse --verify --quiet "origin/$BRANCH"; then
+            echo "Branch origin/$BRANCH no longer exists."
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          AHEAD=$(git rev-list --count origin/main..origin/$BRANCH || echo 0)
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "Branch $BRANCH has no commits ahead of main."
+            echo "has_diff=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Detected branch: $BRANCH (ahead by $AHEAD commits)"
+          echo "has_diff=true" >> "$GITHUB_OUTPUT"
       - name: Create PR if missing (GITHUB_TOKEN)
-        if: ${{ steps.detect.outputs.branch != '' }}
+        if: ${{ steps.detect.outputs.branch != '' && steps.detect.outputs.has_diff == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
