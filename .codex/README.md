@@ -11,12 +11,9 @@
    - `auth.json`, `config.*` — local CLI auth/config. Do not commit.
 
  - Git behavior in this template:
-   - The root `.gitignore` ignores `.codex/` entirely, but allowlists:
-     - `!.codex/prompts/**`
-     - `!.codex/.env.example`
-     - `!.codex/README.md`
+   - The root `.gitignore` ignores sensitive state files under `.codex/` (e.g., `sessions/`, `log/`, `.env`, `auth.json`, `history.jsonl`, `internal_storage.json`, `version.json`).
+   - Prompt files and `.env.example` remain tracked by default.
 
  - Notes:
    - The Makefile automatically sources `.codex/.env` if present.
    - Keep secrets and tokens out of version control; use `.env` locally and `.env.example` for collaborators.
-
