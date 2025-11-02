@@ -1,0 +1,55 @@
+name: Template Sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 7 * * 1' # Mondays 07:17 UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: template-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync From Template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync using built-in GITHUB_TOKEN
+        uses: AndreasAugustin/actions-template-sync@v2
+        with:
+          source_repo_path: will-isles/codex-agent-template
+          upstream_branch: main
+          pr_title: "chore(template): sync from template"
+          pr_branch_name_prefix: "chore/template-sync"
+          pr_labels: "template-sync,automated"
+          source_gh_token: ${{ secrets.GITHUB_TOKEN }}
+          target_gh_token: ${{ secrets.GITHUB_TOKEN }}
+          is_force_push_pr: true
+          is_pr_cleanup: true
+      - name: Detect sync branch
+        id: detect
+        run: |
+          set -e
+          git fetch origin '+refs/heads/chore/template-sync*:refs/remotes/origin/chore/template-sync*' || true
+          BRANCH=$(git for-each-ref refs/remotes/origin/chore/template-sync* --sort=-committerdate --format='%(refname:short)' | head -n1 | sed 's#^origin/##' || true)
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "Detected branch: $BRANCH"
+      - name: Create PR if missing (GITHUB_TOKEN)
+        if: ${{ steps.detect.outputs.branch != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          BR='${{ steps.detect.outputs.branch }}'
+          NUM=$(gh pr list --head "$BR" --state open --json number --jq '.[0].number' || true)
+          if [ -z "$NUM" ]; then
+            gh pr create --head "$BR" --base main --title "chore(template): sync from template" --body "Auto-sync from will-isles/codex-agent-template@main."
+          else
+            echo "PR #$NUM already exists for $BR"
+          fi
