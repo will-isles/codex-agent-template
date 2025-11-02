@@ -17,3 +17,5 @@ approval_policy = "never"
 url = "https://mcp.context7.com/mcp"
 http_headers = { "CONTEXT7_API_KEY" = "${CONTEXT_7_API_KEY}" }
 
+[tools]
+web_search=true

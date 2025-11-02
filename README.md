@@ -15,7 +15,7 @@ The repo uses a local workspace directory at `.codex/` as `CODEX_HOME` for sessi
 
 ## How It Works
 
-- `CODEX_HOME` is set to `.codex/` by the Makefile; environment variables from `.codex/.env` are auto-loaded if present.
+- `CODEX_HOME` is set to `.codex/` by the Makefile; environment variables from `.codex/.env` are auto-loaded if present. See `.codex/README.md` for what lives under `.codex/` and what is safe to commit.
 - See `AGENTS.md` for execution norms (use `rg` over `grep`, file read limits, and JSON handling with `jq`).
 
 ## Add Prompts
