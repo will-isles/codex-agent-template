@@ -1,0 +1,19 @@
+model = "gpt-5"
+model_reasoning_effort = "medium"
+
+[profiles.safe]
+sandbox_mode = "read-only"
+approval_policy = "on-request"
+
+[profiles.default]
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+
+[profiles.danger]
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+http_headers = { "CONTEXT7_API_KEY" = "${CONTEXT_7_API_KEY}" }
+

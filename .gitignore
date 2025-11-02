@@ -1,0 +1,8 @@
+# Ignore Codex CLI artifacts
+.codex/sessions
+.codex/log
+.codex/.env
+.codex/auth.json
+.codex/history.jsonl
+.codex/internal_storage.json
+.codex/version.json
