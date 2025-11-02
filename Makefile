@@ -1,7 +1,8 @@
 SHELL := bash
+.ONESHELL:
 .DEFAULT_GOAL := help
 
-.PHONY: help run resume setup
+.PHONY: help run resume setup doctor
 
 # Allow `make run <profile>` where the first extra word is profile.
 # Example: `make run safe` -> PROFILE=safe; default -> PROFILE=default
@@ -33,6 +34,7 @@ help: ## Show available commands
 	@echo "  make run [profile]  - Run codex with custom CODEX_HOME (default profile: 'default')"
 	@echo "  make resume        - Resume last codex session with same CODEX_HOME"
 	@echo "  make setup         - Run initial setup (requires Homebrew; installs ripgrep, fd, jq)"
+	@echo "  make doctor        - Check required tools and template files"
 
 run: ## Run codex in this repo using a custom CODEX_HOME
 	@$(CODEX_BOOTSTRAP); \
@@ -55,3 +57,42 @@ setup: ## Run initial setup in a fresh, isolated session
 	PROMPT_FILE=".codex/prompts/setup-fast-tools.md"; \
 	PROMPT_CONTENT="$$(cat "$$PROMPT_FILE")"; \
 	CODEX_HOME="$$CODEX_HOME_DIR" codex exec --profile default -C . "$$PROMPT_CONTENT"
+
+doctor: ## Check required tools and template files
+	@echo "Running doctor checks..."; \
+	FAIL=0; \
+	# Check codex CLI
+	if ! command -v codex >/dev/null 2>&1; then \
+	  echo "[x] codex CLI not found (install and add to PATH)"; \
+	  FAIL=1; \
+	else \
+	  echo "[✓] codex CLI found"; \
+	fi; \
+	# Check fast tools
+	for tool in rg fd jq; do \
+	  if ! command -v $$tool >/dev/null 2>&1; then \
+	    echo "[x] $$tool not found (install via your package manager)"; \
+	    FAIL=1; \
+	  else \
+	    echo "[✓] $$tool found"; \
+	  fi; \
+	done; \
+	# Check template files
+	if [ -f .codex/prompts/setup-fast-tools.md ]; then \
+	  echo "[✓] .codex/prompts/setup-fast-tools.md present"; \
+	else \
+	  echo "[x] Missing .codex/prompts/setup-fast-tools.md (add it to enable 'make setup')"; \
+	  FAIL=1; \
+	fi; \
+	if [ -f .codex/.env.example ]; then \
+	  echo "[✓] .codex/.env.example present"; \
+	else \
+	  echo "[!] Optional: add .codex/.env.example for shared config placeholders"; \
+	fi; \
+	# Final status
+	if [ $$FAIL -ne 0 ]; then \
+	  echo "Doctor found issues. See messages above."; \
+	  exit 1; \
+	else \
+	  echo "All basic checks passed."; \
+	fi
